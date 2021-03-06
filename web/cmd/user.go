@@ -6,10 +6,11 @@ import (
 )
 
 type user struct {
-	id bson.ObjectId `bson:"_id"`
-	Email string
-	Name string
-	Surname string
+	//todo Проблема с маленьким id при выводе данных в шаблон
+	id       bson.ObjectId `bson:"_id"`
+	Email    string
+	Name     string
+	Surname  string
 	Password string
 }
 
@@ -22,7 +23,7 @@ func (u *user) valid(repPassword string) bool {
 		return false
 	}
 
-	if getUserByEmail(u.Email) != nil{
+	if getUserByEmail(u.Email) != nil {
 		return false
 	}
 
@@ -37,7 +38,7 @@ func (u user) isEmpty() bool {
 	return false
 }
 
-func (u *user) comparePassword(password string)  error {
+func (u *user) comparePassword(password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	if err == nil {
 		return nil
@@ -45,13 +46,12 @@ func (u *user) comparePassword(password string)  error {
 	return err
 }
 
-
 func (u user) saveUser() error {
 	session, err := getSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
+	defer session.Close()
 	collection := session.DB(database).C(usersCol)
 	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {

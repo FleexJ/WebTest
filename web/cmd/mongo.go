@@ -9,7 +9,7 @@ const (
 	mongoUrl = "mongodb://localhost:27017"
 	database = "web"
 	usersCol = "users"
-	authCol = "aut"
+	authCol  = "aut"
 )
 
 func getSession() (*mgo.Session, error) {
@@ -22,10 +22,10 @@ func getSession() (*mgo.Session, error) {
 
 func getUserByEmail(email string) *user {
 	session, err := getSession()
-	defer session.Close()
 	if err != nil {
 		return nil
 	}
+	defer session.Close()
 	collection := session.DB(database).C(usersCol)
 	var u user
 	err = collection.Find(bson.M{"email": email}).One(&u)
@@ -37,10 +37,10 @@ func getUserByEmail(email string) *user {
 
 func getAllUsers() ([]user, error) {
 	session, err := getSession()
-	defer session.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer session.Close()
 	collection := session.DB(database).C(usersCol)
 	var users []user
 	err = collection.Find(bson.M{}).All(&users)
@@ -50,4 +50,3 @@ func getAllUsers() ([]user, error) {
 
 	return users, nil
 }
-

@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-
 //Главная страница
 func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -36,7 +35,6 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 	tkn := checkAuth(r)
@@ -53,21 +51,19 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	users, err := getAllUsers()
-	if err != nil{
+	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-
 	ts.Execute(w, struct {
-		User *user
+		User  *user
 		Users []user
 	}{
-		User: getUserByEmail(tkn.EmailUser),
+		User:  getUserByEmail(tkn.EmailUser),
 		Users: users,
 	})
 }
-
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
@@ -91,13 +87,12 @@ func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 //Обработка POST-запроса страницы регистрации
 func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 	u := user{
-		Email: r.FormValue("email"),
-		Name: r.FormValue("name"),
-		Surname: r.FormValue("surname"),
+		Email:    r.FormValue("email"),
+		Name:     r.FormValue("name"),
+		Surname:  r.FormValue("surname"),
 		Password: r.FormValue("password"),
 	}
 	repPassword := r.FormValue("repPassword")
@@ -113,7 +108,6 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +152,6 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 	app.infoLog.Println("Пользователь вошел:", email)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-
 
 //Выход из учетной записи
 func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
