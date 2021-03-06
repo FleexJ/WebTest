@@ -1,0 +1,13 @@
+{{template "header" .}}
+
+{{define "title"}}Home page{{end}}
+
+{{define "main"}}
+{{if .User}}
+    <div>
+        <a href="/users/">Пользователи</a>
+    </div>
+{{else}}
+    <p>Для просмотра списка пользователей нужна авторизация</p>
+{{end}}
+{{end}}

@@ -1,0 +1,30 @@
+{{define "header"}}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{template "title" .}}</title>
+</head>
+<body>
+    <div style="display: inline">
+        <h2><a href="/">На главную</a></h2>
+                {{if .User }}
+                <p>Авторизирован: {{.User.Name}}</p>
+                <p>Email: {{.User.Email}}</p>
+                <a style="margin-left: 20px"></a>
+                <a href="/logout/">Выход</a>
+                {{else}}
+                <p>Не авторизирован</p>
+                <a href="/signUp/">Регистрация</a>
+                <a style="margin-left: 20px"></a>
+                <a href="/signIn/">Войти</a>
+                {{end}}
+        <hr/>
+    </div>
+    {{template "main" .}}
+<!--    {{template "footer" .}}-->
+</body>
+</html>
+
+{{end}}
