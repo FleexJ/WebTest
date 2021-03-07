@@ -83,17 +83,14 @@ func generateToken(word string) string {
 	return word + string(b)
 }
 
-func checkAuth(r *http.Request) (*token, error) {
+func checkAuth(r *http.Request) *token {
 	token := getCookies(r)
 	if token.isEmpty() {
-		return nil, nil
+		return nil
 	}
-	is, err := token.findInDB()
-	if err != nil {
-		return nil, err
-	}
+	is := token.findInDB()
 	if !is {
-		return nil, nil
+		return nil
 	}
-	return token, nil
+	return token
 }

@@ -19,11 +19,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	tkn := checkAuth(r)
 	if tkn == nil {
 		ts.Execute(w, struct {
 			User *user
@@ -46,11 +42,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	tkn := checkAuth(r)
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -85,11 +77,7 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	tkn := checkAuth(r)
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -133,11 +121,7 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	tkn := checkAuth(r)
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -177,17 +161,13 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Выход из учетной записи
 func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	tkn := checkAuth(r)
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	token := getCookies(r)
-	err = token.deleteToken()
+	err := token.deleteToken()
 	if err != nil {
 		app.serverError(w, err)
 		return

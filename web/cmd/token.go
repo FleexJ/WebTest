@@ -44,20 +44,20 @@ func (t token) deleteToken() error {
 	return nil
 }
 
-func (t token) findInDB() (bool, error) {
+func (t token) findInDB() bool {
 	session, err := getSession()
 	if err != nil {
-		return false, err
+		return false
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
 	var token token
 	err = collection.Find(bson.M{"emailuser": t.EmailUser, "token": t.Token}).One(&token)
 	if err != nil {
-		return false, err
+		return false
 	}
 	if token.isEmpty() {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
