@@ -3,19 +3,24 @@ package main
 import "github.com/gorilla/mux"
 
 func (app *application) routes() *mux.Router {
-	mux := mux.NewRouter()
+	router := mux.NewRouter()
 
-	mux.HandleFunc("/", app.indexPageGET).Methods("GET")
+	router.HandleFunc("/", app.indexPageGET).Methods("GET")
 
-	mux.HandleFunc("/users/", app.usersPageGET).Methods("GET")
+	router.HandleFunc("/users/", app.usersPageGET).Methods("GET")
 
-	mux.HandleFunc("/signUp/", app.signUpPageGET).Methods("GET")
-	mux.HandleFunc("/signUp/", app.signUpPagePOST).Methods("POST")
+	router.HandleFunc("/signUp/", app.signUpPageGET).Methods("GET")
+	router.HandleFunc("/signUp/", app.signUpPagePOST).Methods("POST")
 
-	mux.HandleFunc("/signIn/", app.signInPageGET).Methods("GET")
-	mux.HandleFunc("/signIn/", app.signInPagePOST).Methods("POST")
+	router.HandleFunc("/signIn/", app.signInPageGET).Methods("GET")
+	router.HandleFunc("/signIn/", app.signInPagePOST).Methods("POST")
 
-	mux.HandleFunc("/logout/", app.logOut)
+	router.HandleFunc("/logout/", app.logOut)
 
-	return mux
+	router.HandleFunc("/changeUser/", app.changeUserGET).Methods("GET")
+	router.HandleFunc("/changeUser/", app.changeUserPOST).Methods("POST")
+
+	//TODO добавить изменение пароля
+
+	return router
 }

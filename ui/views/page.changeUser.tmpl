@@ -1,0 +1,22 @@
+{{template "header".}}
+
+{{define "title"}}Изменить данные{{end}}
+
+{{define "main"}}
+
+{{if .User }}
+    <form action="/changeUser/" method="post">
+        <label>Email</label><br>
+        <input type="text" name="email" placeholder="Email" value={{.User.Email}} />
+        <br/><br/>
+        <label>Имя</label><br>
+        <input type="text" name="name" placeholder="Имя" value={{.User.Name}} />
+        <br/><br/>
+        <label>Фамилия</label><br>
+        <input type="text" name="surname" placeholder="Фамилия" value={{.User.Surname}} />
+        <br/><br/>
+        <input type="submit" value="Изменить"/>
+    </form>
+{{end}}
+
+{{end}}

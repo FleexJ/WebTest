@@ -6,12 +6,15 @@
     <meta charset="UTF-8">
     <title>{{template "title" .}}</title>
 </head>
-<body>
+<body style="height: 100%">
     <div style="display: inline">
         <h2><a href="/">На главную</a></h2>
                 {{if .User }}
                 <p>Авторизирован: {{.User.Name}}</p>
                 <p>Email: {{.User.Email}}</p>
+                <a href="/changeUser/">Изменить данные</a>
+                <a style="margin-left: 20px"></a>
+                <a href="/changePassword/">Сменить пароль</a>
                 <a style="margin-left: 20px"></a>
                 <a href="/logout/">Выход</a>
                 {{else}}
@@ -23,7 +26,7 @@
         <hr/>
     </div>
     {{template "main" .}}
-<!--    {{template "footer" .}}-->
+    {{template "footer" .}}
 </body>
 </html>
 

@@ -2,23 +2,31 @@ package main
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"net/http"
 )
 
 type token struct {
+	IdUser    string
 	EmailUser string
 	Token     string
 }
 
 //Проверка токена на пустоту
 func (t token) isEmpty() bool {
-	if t.EmailUser == "" || t.Token == "" {
+	if t.EmailUser == "" || t.Token == "" || t.IdUser == "" {
 		return true
 	}
 	return false
 }
 
 //Сохраняет токен в базе
-func (t token) saveToken() error {
+func (t token) saveToken(w http.ResponseWriter) error {
+	http.SetCookie(w,
+		newCookie(idCookieName, t.IdUser))
+	http.SetCookie(w,
+		newCookie(emailCookieName, t.EmailUser))
+	http.SetCookie(w,
+		newCookie(tokenCookieName, t.Token))
 	session, err := getSession()
 	if err != nil {
 		return err
@@ -32,15 +40,21 @@ func (t token) saveToken() error {
 	return nil
 }
 
-//Удаляет токен из базы
-func (t token) deleteToken() error {
+//Удаляет токен из базы и из куки
+func (t token) deleteToken(w http.ResponseWriter) error {
+	http.SetCookie(w,
+		newCookie(idCookieName, ""))
+	http.SetCookie(w,
+		newCookie(emailCookieName, ""))
+	http.SetCookie(w,
+		newCookie(tokenCookieName, ""))
 	session, err := getSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
-	_, err = collection.RemoveAll(bson.M{"emailuser": t.EmailUser, "token": t.Token})
+	_, err = collection.RemoveAll(bson.M{"id": t.IdUser, "token": t.Token})
 	if err != nil {
 		return err
 	}
@@ -55,12 +69,12 @@ func (t token) findInDB() bool {
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
-	var token token
-	err = collection.Find(bson.M{"emailuser": t.EmailUser, "token": t.Token}).One(&token)
+	var tkn *token
+	err = collection.Find(bson.M{"iduser": t.IdUser, "token": t.Token}).One(&tkn)
 	if err != nil {
 		return false
 	}
-	if token.isEmpty() {
+	if tkn == nil {
 		return false
 	}
 	return true

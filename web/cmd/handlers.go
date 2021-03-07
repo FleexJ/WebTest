@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"html/template"
 	"net/http"
 )
@@ -27,7 +28,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 			User: nil,
 		})
 	} else {
-		u, err := getUserByEmail(tkn.EmailUser)
+		u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
 		if err != nil {
 			app.serverError(w, err)
 			return
@@ -61,7 +62,7 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := getUserByEmail(tkn.EmailUser)
+	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -90,16 +91,13 @@ func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
-		User *user
-	}{
-		User: nil,
-	})
+	ts.Execute(w, nil)
 }
 
 //Обработка POST-запроса страницы регистрации
 func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 	u := user{
+		Id:       bson.NewObjectId(),
 		Email:    r.FormValue("email"),
 		Name:     r.FormValue("name"),
 		Surname:  r.FormValue("surname"),
@@ -116,6 +114,7 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+	app.infoLog.Println("Новый пользователь:", u.Email)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -134,11 +133,7 @@ func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
-		User *user
-	}{
-		User: nil,
-	})
+	ts.Execute(w, nil)
 }
 
 //Обработка POST-запроса страницы авторизации
@@ -166,14 +161,80 @@ func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	token := getTokenCookies(r)
-	err := token.deleteToken()
+	err := tkn.deleteToken(w)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	clearCookies(w)
-	app.infoLog.Println("Пользователь вышел:", token.EmailUser)
+	app.infoLog.Println("Пользователь вышел:", tkn.EmailUser)
 
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
+	tkn := checkAuth(r)
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	ts, err := template.ParseFiles(
+		"./ui/views/page.changeUser.tmpl",
+		"./ui/views/header.main.tmpl",
+		"./ui/views/footer.main.tmpl")
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	ts.Execute(w, struct {
+		User   *user
+		IdUser string
+	}{
+		User:   u,
+		IdUser: u.Id.Hex(),
+	})
+}
+
+//Обработка запроса на смену данных пользователя
+func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
+	tkn := checkAuth(r)
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u := user{
+		Id:      bson.ObjectIdHex(tkn.IdUser),
+		Email:   r.FormValue("email"),
+		Name:    r.FormValue("name"),
+		Surname: r.FormValue("surname"),
+	}
+
+	uG, err := getUserById(u.Id)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if uG == nil {
+		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
+		return
+	}
+	u.Password = uG.Password
+	if !u.valid(u.Password) {
+		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
+		return
+	}
+	err = u.updateUser()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

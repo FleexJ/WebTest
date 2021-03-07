@@ -40,6 +40,24 @@ func getUserByEmail(email string) (*user, error) {
 	return &u, nil
 }
 
+func getUserById(id bson.ObjectId) (*user, error) {
+	session, err := getSession()
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+	collection := session.DB(database).C(usersCol)
+	var u user
+	err = collection.Find(bson.M{"_id": id}).One(&u)
+	if err != nil && err.Error() == "not found" {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 //Возвращается список всех пользователей
 func getAllUsers() ([]user, error) {
 	session, err := getSession()

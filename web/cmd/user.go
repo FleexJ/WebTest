@@ -22,8 +22,8 @@ func (u *user) valid(repPassword string) bool {
 		u.Password != repPassword {
 		return false
 	}
-	u, err := getUserByEmail(u.Email)
-	if err != nil || u != nil {
+	uG, err := getUserByEmail(u.Email)
+	if err != nil || (uG != nil && u.Email == uG.Email && u.Id != uG.Id) {
 		return false
 	}
 	return true
@@ -66,5 +66,20 @@ func (u user) saveUser() error {
 		return err
 	}
 
+	return nil
+}
+
+//Обновление данных пользователя
+func (u user) updateUser() error {
+	session, err := getSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	collection := session.DB(database).C(usersCol)
+	err = collection.Update(bson.M{"_id": u.Id}, u)
+	if err != nil {
+		return err
+	}
 	return nil
 }

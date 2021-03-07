@@ -1,27 +1,35 @@
 package main
 
 import (
+	"encoding/base64"
+	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
 const (
+	idCookieName    = "id"
 	emailCookieName = "email"
 	tokenCookieName = "token"
 )
 
 //Вощвращает токен, считанный из куки
 func getTokenCookies(r *http.Request) *token {
+	cookieId, err := r.Cookie(idCookieName)
+	if err != nil {
+		return nil
+	}
 	cookieEmail, err := r.Cookie(emailCookieName)
 	if err != nil {
-		return &token{}
+		return nil
 	}
 	cookieToken, err := r.Cookie(tokenCookieName)
 	if err != nil {
-		return &token{}
+		return nil
 	}
 	return &token{
+		IdUser:    cookieId.Value,
 		EmailUser: cookieEmail.Value,
 		Token:     cookieToken.Value,
 	}
@@ -35,14 +43,6 @@ func newCookie(name, value string) *http.Cookie {
 		Path:    "/",
 		Expires: time.Now().Add(365 * 24 * time.Hour),
 	}
-}
-
-//Функция очистки куки
-func clearCookies(w http.ResponseWriter) {
-	http.SetCookie(w,
-		newCookie(emailCookieName, ""))
-	http.SetCookie(w,
-		newCookie(tokenCookieName, ""))
 }
 
 //Функция авторизации пользователя
@@ -61,18 +61,15 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	token := token{
+	tkn := token{
+		IdUser:    u.Id.Hex(),
 		EmailUser: u.Email,
-		Token:     generateToken(u.Email),
+		Token:     generateToken(u.Id.Hex()),
 	}
-	err = token.saveToken()
+	err = tkn.saveToken(w)
 	if err != nil {
 		return "", err
 	}
-	http.SetCookie(w,
-		newCookie(emailCookieName, token.EmailUser))
-	http.SetCookie(w,
-		newCookie(tokenCookieName, token.Token))
 	return "", nil
 }
 
@@ -84,18 +81,22 @@ func generateToken(word string) string {
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
-	return word + string(b)
+	return word + base64.StdEncoding.EncodeToString(b)
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе
 func checkAuth(r *http.Request) *token {
-	token := getTokenCookies(r)
-	if token.isEmpty() {
+	tkn := getTokenCookies(r)
+	if nil == tkn {
 		return nil
 	}
-	is := token.findInDB()
+	is := tkn.findInDB()
 	if !is {
 		return nil
 	}
-	return token
+	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
+	if err != nil || u == nil {
+		return nil
+	}
+	return tkn
 }
