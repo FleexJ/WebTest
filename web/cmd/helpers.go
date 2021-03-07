@@ -22,15 +22,15 @@ func getCookies(r *http.Request) *token {
 	}
 	return &token{
 		EmailUser: cookieEmail.Value,
-		Token: cookieToken.Value,
+		Token:     cookieToken.Value,
 	}
 }
 
 func newCookie(name, value string) *http.Cookie {
 	return &http.Cookie{
-		Name: name,
-		Value: value,
-		Path: "/",
+		Name:    name,
+		Value:   value,
+		Path:    "/",
 		Expires: time.Now().Add(365 * 24 * time.Hour),
 	}
 }
@@ -43,19 +43,22 @@ func clearCookies(w http.ResponseWriter) {
 }
 
 func auth(w http.ResponseWriter, email, password string) (string, error) {
-	u := getUserByEmail(email)
+	u, err := getUserByEmail(email)
+	if err != nil {
+		return "", err
+	}
 	if u == nil {
 		return "User not found", nil
 	}
 
-	err := u.comparePassword(password)
+	err = u.comparePassword(password)
 	if err != nil {
 		return "", err
 	}
 
 	token := token{
 		EmailUser: u.Email,
-		Token: generateToken(u.Email),
+		Token:     generateToken(u.Email),
 	}
 	err = token.saveToken()
 	if err != nil {
@@ -80,14 +83,17 @@ func generateToken(word string) string {
 	return word + string(b)
 }
 
-func checkAuth(r *http.Request) *token {
+func checkAuth(r *http.Request) (*token, error) {
 	token := getCookies(r)
 	if token.isEmpty() {
-		return nil
+		return nil, nil
 	}
-	if token.findInDB() != nil {
-		return nil
+	is, err := token.findInDB()
+	if err != nil {
+		return nil, err
 	}
-	return token
+	if !is {
+		return nil, nil
+	}
+	return token, nil
 }
-

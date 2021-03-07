@@ -11,7 +11,6 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
 	ts, err := template.ParseFiles(
 		"./ui/views/page.index.tmpl",
 		"./ui/views/header.main.tmpl",
@@ -20,24 +19,38 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	if tkn := checkAuth(r); tkn != nil {
-		ts.Execute(w, struct {
-			User user
-		}{
-			User: *getUserByEmail(tkn.EmailUser),
-		})
-	} else {
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if tkn == nil {
 		ts.Execute(w, struct {
 			User *user
 		}{
 			User: nil,
+		})
+	} else {
+		u, err := getUserByEmail(tkn.EmailUser)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		ts.Execute(w, struct {
+			User *user
+		}{
+			User: u,
 		})
 	}
 }
 
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -56,18 +69,27 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	u, err := getUserByEmail(tkn.EmailUser)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	ts.Execute(w, struct {
 		User  *user
 		Users []user
 	}{
-		User:  getUserByEmail(tkn.EmailUser),
+		User:  u,
 		Users: users,
 	})
 }
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -111,7 +133,11 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -141,11 +167,7 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	msg, err := auth(w, email, password)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if msg != "" {
+	if msg != "" || err != nil {
 		http.Redirect(w, r, "/signIn/", http.StatusSeeOther)
 		return
 	}
@@ -155,13 +177,17 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Выход из учетной записи
 func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	token := getCookies(r)
-	err := token.deleteToken()
+	err = token.deleteToken()
 	if err != nil {
 		app.serverError(w, err)
 		return

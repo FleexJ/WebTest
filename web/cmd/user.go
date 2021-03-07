@@ -7,7 +7,7 @@ import (
 
 type user struct {
 	//todo Проблема с маленьким id при выводе данных в шаблон
-	id       bson.ObjectId `bson:"_id"`
+	Id       bson.ObjectId `bson:"_id"`
 	Email    string
 	Name     string
 	Surname  string
@@ -22,11 +22,10 @@ func (u *user) valid(repPassword string) bool {
 		u.Password != repPassword {
 		return false
 	}
-
-	if getUserByEmail(u.Email) != nil {
+	u, err := getUserByEmail(u.Email)
+	if err != nil || u != nil {
 		return false
 	}
-
 	return true
 }
 
@@ -58,6 +57,7 @@ func (u user) saveUser() error {
 		return err
 	}
 	u.Password = string(bcryptPassw)
+	u.Id = bson.NewObjectId()
 	err = collection.Insert(u)
 	if err != nil {
 		return err

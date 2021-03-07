@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -45,20 +44,20 @@ func (t token) deleteToken() error {
 	return nil
 }
 
-func (t token) findInDB() error {
+func (t token) findInDB() (bool, error) {
 	session, err := getSession()
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
 	var token token
 	err = collection.Find(bson.M{"emailuser": t.EmailUser, "token": t.Token}).One(&token)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if token.isEmpty() {
-		return errors.New("token not found in database")
+		return false, nil
 	}
-	return nil
+	return true, nil
 }
