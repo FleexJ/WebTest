@@ -166,7 +166,7 @@ func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	token := getCookies(r)
+	token := getTokenCookies(r)
 	err := token.deleteToken()
 	if err != nil {
 		app.serverError(w, err)

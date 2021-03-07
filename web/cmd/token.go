@@ -9,6 +9,7 @@ type token struct {
 	Token     string
 }
 
+//Проверка токена на пустоту
 func (t token) isEmpty() bool {
 	if t.EmailUser == "" || t.Token == "" {
 		return true
@@ -16,6 +17,7 @@ func (t token) isEmpty() bool {
 	return false
 }
 
+//Сохраняет токен в базе
 func (t token) saveToken() error {
 	session, err := getSession()
 	if err != nil {
@@ -30,6 +32,7 @@ func (t token) saveToken() error {
 	return nil
 }
 
+//Удаляет токен из базы
 func (t token) deleteToken() error {
 	session, err := getSession()
 	if err != nil {
@@ -44,6 +47,7 @@ func (t token) deleteToken() error {
 	return nil
 }
 
+//Проверка на существование токена в базе
 func (t token) findInDB() bool {
 	session, err := getSession()
 	if err != nil {

@@ -3,7 +3,7 @@
 {{define "title"}}Все пользователи{{end}}
 
 {{define "main"}}
-    {{range .Users}}
+    {{if .Users}}
         <table cellspacing="10px">
             <tr>
                 <th>Id</th>
@@ -11,17 +11,16 @@
                 <th>Name</th>
                 <th>Surname</th>
             </tr>
+            {{range .Users}}
             <tr>
                 <td>{{.Id}}</td>
                 <td>{{.Email}}</td>
                 <td>{{.Name}}</td>
                 <td>{{.Surname}}</td>
             </tr>
+            {{end}}
         </table>
-        <br/>
     {{else}}
-        <div>
-            <h3>Пользователей пока нет</h3>
-        </div>
+        <h3>Пользователей пока нет</h3>
     {{end}}
 {{end}}

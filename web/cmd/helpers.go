@@ -11,7 +11,8 @@ const (
 	tokenCookieName = "token"
 )
 
-func getCookies(r *http.Request) *token {
+//Вощвращает токен, считанный из куки
+func getTokenCookies(r *http.Request) *token {
 	cookieEmail, err := r.Cookie(emailCookieName)
 	if err != nil {
 		return &token{}
@@ -26,6 +27,7 @@ func getCookies(r *http.Request) *token {
 	}
 }
 
+//Возвращает новый объект куки
 func newCookie(name, value string) *http.Cookie {
 	return &http.Cookie{
 		Name:    name,
@@ -35,13 +37,18 @@ func newCookie(name, value string) *http.Cookie {
 	}
 }
 
+//Функция очистки куки
 func clearCookies(w http.ResponseWriter) {
-	cookieId := newCookie(emailCookieName, "")
-	cookieToken := newCookie(tokenCookieName, "")
-	http.SetCookie(w, cookieToken)
-	http.SetCookie(w, cookieId)
+	http.SetCookie(w,
+		newCookie(emailCookieName, ""))
+	http.SetCookie(w,
+		newCookie(tokenCookieName, ""))
 }
 
+//Функция авторизации пользователя
+//Ищет совпадения в базе пользователей
+//Выдает новый токен доступа
+//при успехе возвращается пустая строка
 func auth(w http.ResponseWriter, email, password string) (string, error) {
 	u, err := getUserByEmail(email)
 	if err != nil {
@@ -50,12 +57,10 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 	if u == nil {
 		return "User not found", nil
 	}
-
 	err = u.comparePassword(password)
 	if err != nil {
 		return "", err
 	}
-
 	token := token{
 		EmailUser: u.Email,
 		Token:     generateToken(u.Email),
@@ -64,15 +69,14 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	cookieId := newCookie(emailCookieName, token.EmailUser)
-	cookieToken := newCookie(tokenCookieName, token.Token)
-	http.SetCookie(w, cookieId)
-	http.SetCookie(w, cookieToken)
-
+	http.SetCookie(w,
+		newCookie(emailCookieName, token.EmailUser))
+	http.SetCookie(w,
+		newCookie(tokenCookieName, token.Token))
 	return "", nil
 }
 
+//Генерирует новый токен на основе почты
 func generateToken(word string) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	n := 20
@@ -83,8 +87,9 @@ func generateToken(word string) string {
 	return word + string(b)
 }
 
+//Проверка токена доступа, возвращает токен с данными при успехе
 func checkAuth(r *http.Request) *token {
-	token := getCookies(r)
+	token := getTokenCookies(r)
 	if token.isEmpty() {
 		return nil
 	}
