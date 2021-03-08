@@ -3,17 +3,20 @@ package main
 import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type token struct {
 	IdUser    string
 	EmailUser string
 	Token     string
+	Expires   int64
 }
 
 //Проверка токена на пустоту
 func (t token) isEmpty() bool {
-	if t.EmailUser == "" || t.Token == "" || t.IdUser == "" {
+	if t.EmailUser == "" || t.Token == "" || t.IdUser == "" || t.Expires == 0 {
 		return true
 	}
 	return false
@@ -27,12 +30,22 @@ func (t token) saveToken(w http.ResponseWriter) error {
 		newCookie(emailCookieName, t.EmailUser))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, t.Token))
+	http.SetCookie(w,
+		newCookie(expiresCookieName, strconv.FormatInt(t.Expires, 10)))
 	session, err := getSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
+	//Удаление всех устаревших токенов
+	var tkns []token
+	_ = collection.Find(bson.M{"id": t.IdUser}).All(&tkns)
+	for _, el := range tkns {
+		if el.Expires <= time.Now().Unix() {
+			_ = collection.Remove(bson.M{"expires": el.Expires, "iduser:": el.IdUser})
+		}
+	}
 	err = collection.Insert(t)
 	if err != nil {
 		return err
@@ -48,6 +61,8 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 		newCookie(emailCookieName, ""))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, ""))
+	http.SetCookie(w,
+		newCookie(expiresCookieName, ""))
 	session, err := getSession()
 	if err != nil {
 		return err
@@ -77,8 +92,5 @@ func (t token) findInDB() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	//if tkn == nil {
-	//	return false
-	//}
 	return true, nil
 }

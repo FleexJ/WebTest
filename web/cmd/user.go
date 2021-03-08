@@ -102,3 +102,17 @@ func (u user) updateUserPassword() error {
 	}
 	return nil
 }
+
+func (u user) deleteUser() error {
+	session, err := getSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	collection := session.DB(database).C(usersCol)
+	err = collection.Remove(bson.M{"_id": u.Id})
+	if err != nil {
+		return err
+	}
+	return nil
+}

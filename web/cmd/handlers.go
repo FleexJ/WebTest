@@ -346,3 +346,87 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	ts, err := template.ParseFiles(
+		"./ui/views/page.deleteUser.tmpl",
+		"./ui/views/header.main.tmpl",
+		"./ui/views/footer.main.tmpl")
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	ts.Execute(w, struct {
+		User   *user
+		IdUser string
+	}{
+		User:   u,
+		IdUser: u.Id.Hex(),
+	})
+}
+
+func (app *application) deleteUserPOST(w http.ResponseWriter, r *http.Request) {
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	id := bson.ObjectIdHex(tkn.IdUser)
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	if password == "" || email == "" {
+		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
+		return
+	}
+	u, err := getUserById(id)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if u == nil {
+		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
+		return
+	}
+	err = u.comparePassword(password)
+	if err != nil {
+		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
+		return
+	}
+	if email != u.Email {
+		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
+		return
+	}
+	err = u.deleteUser()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	err = tkn.deleteToken(w)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/logout/", http.StatusSeeOther)
+}

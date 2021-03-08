@@ -1,0 +1,17 @@
+{{template "header".}}
+
+{{define "title"}}Удаление{{end}}
+
+{{define "main"}}
+
+{{if .User }}
+    <form action="/deleteUser/" method="post">
+        <input type="text" name="email" placeholder="Email"/>
+        <br><br>
+        <input type="password" name="password" placeholder="Пароль"/>
+        <br><br>
+        <input type="submit" value="Удалить">
+    </form>
+{{end}}
+
+{{end}}

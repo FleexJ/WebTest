@@ -1,17 +1,20 @@
 package main
 
 import (
-	"encoding/base64"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 const (
-	idCookieName    = "id"
-	emailCookieName = "email"
-	tokenCookieName = "token"
+	idCookieName      = "id"
+	emailCookieName   = "email"
+	tokenCookieName   = "token"
+	expiresCookieName = "expires"
+	expDay            = 60 * 24
 )
 
 //Вощвращает токен, считанный из куки
@@ -28,13 +31,23 @@ func getTokenCookies(r *http.Request) *token {
 	if err != nil {
 		return nil
 	}
-	if cookieId.Value == "" || cookieToken.Value == "" || cookieEmail.Value == "" {
+	cookieExpires, err := r.Cookie(expiresCookieName)
+	if err != nil {
+		return nil
+	}
+	expires, err := strconv.Atoi(cookieExpires.Value)
+	if err != nil {
+		return nil
+	}
+	if cookieId.Value == "" || cookieToken.Value == "" ||
+		cookieEmail.Value == "" || expires == 0 {
 		return nil
 	}
 	return &token{
 		IdUser:    cookieId.Value,
 		EmailUser: cookieEmail.Value,
 		Token:     cookieToken.Value,
+		Expires:   int64(expires),
 	}
 }
 
@@ -44,7 +57,7 @@ func newCookie(name, value string) *http.Cookie {
 		Name:    name,
 		Value:   value,
 		Path:    "/",
-		Expires: time.Now().Add(365 * 24 * time.Hour),
+		Expires: time.Now().Add(expDay * time.Hour),
 	}
 }
 
@@ -68,6 +81,7 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 		IdUser:    u.Id.Hex(),
 		EmailUser: u.Email,
 		Token:     generateToken(u.Id.Hex()),
+		Expires:   time.Now().Add(expDay * time.Hour).Unix(),
 	}
 	err = tkn.saveToken(w)
 	if err != nil {
@@ -84,7 +98,8 @@ func generateToken(word string) string {
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
-	return word + base64.StdEncoding.EncodeToString(b)
+	bcryptB, _ := bcrypt.GenerateFromPassword(b, bcrypt.DefaultCost)
+	return word + string(bcryptB)
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе

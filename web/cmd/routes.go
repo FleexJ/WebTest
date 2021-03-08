@@ -23,5 +23,8 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/changePassword/", app.changePasswordGET).Methods("GET")
 	router.HandleFunc("/changePassword/", app.changePasswordPOST).Methods("POST")
 
+	router.HandleFunc("/deleteUser/", app.deleteUserGET).Methods("GET")
+	router.HandleFunc("/deleteUser/", app.deleteUserPOST).Methods("POST")
+
 	return router
 }
