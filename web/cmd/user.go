@@ -84,6 +84,7 @@ func (u user) updateUser() error {
 	return nil
 }
 
+//Обновление пароля пользователя
 func (u user) updateUserPassword() error {
 	session, err := getSession()
 	if err != nil {
@@ -103,6 +104,7 @@ func (u user) updateUserPassword() error {
 	return nil
 }
 
+//Удаление пользователя из базы
 func (u user) deleteUser() error {
 	session, err := getSession()
 	if err != nil {

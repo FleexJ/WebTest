@@ -347,6 +347,7 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+//Отображение страницы удаления пользователя
 func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 	tkn, err := checkAuth(r)
 	if err != nil {
@@ -383,6 +384,7 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+//Обработка запроса на удаление пользователя
 func (app *application) deleteUserPOST(w http.ResponseWriter, r *http.Request) {
 	tkn, err := checkAuth(r)
 	if err != nil {
