@@ -83,3 +83,22 @@ func (u user) updateUser() error {
 	}
 	return nil
 }
+
+func (u user) updateUserPassword() error {
+	session, err := getSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	collection := session.DB(database).C(usersCol)
+	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(bcryptPassw)
+	err = collection.Update(bson.M{"_id": u.Id}, u)
+	if err != nil {
+		return err
+	}
+	return nil
+}

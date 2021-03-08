@@ -28,6 +28,9 @@ func getTokenCookies(r *http.Request) *token {
 	if err != nil {
 		return nil
 	}
+	if cookieId.Value == "" || cookieToken.Value == "" || cookieEmail.Value == "" {
+		return nil
+	}
 	return &token{
 		IdUser:    cookieId.Value,
 		EmailUser: cookieEmail.Value,
@@ -73,7 +76,7 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 	return "", nil
 }
 
-//Генерирует новый токен на основе почты
+//Генерирует новый токен на основе какого-то слова
 func generateToken(word string) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	n := 20
@@ -85,18 +88,24 @@ func generateToken(word string) string {
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе
-func checkAuth(r *http.Request) *token {
+func checkAuth(r *http.Request) (*token, error) {
 	tkn := getTokenCookies(r)
-	if nil == tkn {
-		return nil
+	if tkn == nil {
+		return nil, nil
 	}
-	is := tkn.findInDB()
+	is, err := tkn.findInDB()
+	if err != nil {
+		return nil, err
+	}
 	if !is {
-		return nil
+		return nil, nil
 	}
 	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil || u == nil {
-		return nil
+	if err != nil {
+		return nil, err
 	}
-	return tkn
+	if u == nil {
+		return nil, nil
+	}
+	return tkn, nil
 }

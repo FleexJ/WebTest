@@ -62,20 +62,23 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 }
 
 //Проверка на существование токена в базе
-func (t token) findInDB() bool {
+func (t token) findInDB() (bool, error) {
 	session, err := getSession()
 	if err != nil {
-		return false
+		return false, err
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
 	var tkn *token
 	err = collection.Find(bson.M{"iduser": t.IdUser, "token": t.Token}).One(&tkn)
+	if err != nil && err.Error() == "not found" {
+		return false, nil
+	}
 	if err != nil {
-		return false
+		return false, err
 	}
-	if tkn == nil {
-		return false
-	}
-	return true
+	//if tkn == nil {
+	//	return false
+	//}
+	return true, nil
 }

@@ -20,7 +20,11 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		ts.Execute(w, struct {
 			User *user
@@ -43,7 +47,11 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -78,7 +86,11 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -120,7 +132,11 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -156,12 +172,16 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Выход из учетной записи
 func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	err := tkn.deleteToken(w)
+	err = tkn.deleteToken(w)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -172,7 +192,11 @@ func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -205,7 +229,11 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка запроса на смену данных пользователя
 func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
-	tkn := checkAuth(r)
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -232,6 +260,86 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = u.updateUser()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+//Отображение страницы смены пароля
+func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request) {
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	ts, err := template.ParseFiles(
+		"./ui/views/page.changePassword.tmpl",
+		"./ui/views/header.main.tmpl",
+		"./ui/views/footer.main.tmpl")
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	ts.Execute(w, struct {
+		User   *user
+		IdUser string
+	}{
+		User:   u,
+		IdUser: u.Id.Hex(),
+	})
+}
+
+//Обработка запроса на обновление пароля пользователя
+func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Request) {
+	tkn, err := checkAuth(r)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if tkn == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	id := bson.ObjectIdHex(tkn.IdUser)
+	password := r.FormValue("password")
+	newPassword := r.FormValue("newPassword")
+	repNewPassword := r.FormValue("repNewPassword")
+	if password == "" || newPassword == "" || repNewPassword == "" ||
+		newPassword != repNewPassword {
+		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
+		return
+	}
+	u, err := getUserById(id)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if u == nil {
+		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
+		return
+	}
+	err = u.comparePassword(password)
+	if err != nil {
+		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
+		return
+	}
+	u.Password = newPassword
+	err = u.updateUserPassword()
 	if err != nil {
 		app.serverError(w, err)
 		return
