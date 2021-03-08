@@ -26,7 +26,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tkn == nil {
-		ts.Execute(w, struct {
+		err = ts.Execute(w, struct {
 			User *user
 		}{
 			User: nil,
@@ -37,11 +37,14 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, err)
 			return
 		}
-		ts.Execute(w, struct {
+		err = ts.Execute(w, struct {
 			User *user
 		}{
 			User: u,
 		})
+	}
+	if err != nil {
+		app.serverError(w, err)
 	}
 }
 
@@ -75,13 +78,16 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
+	err = ts.Execute(w, struct {
 		User  *user
 		Users []user
 	}{
 		User:  u,
 		Users: users,
 	})
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Отображение страницы регистрации
@@ -103,7 +109,10 @@ func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, nil)
+	err = ts.Execute(w, nil)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Обработка POST-запроса страницы регистрации
@@ -149,7 +158,10 @@ func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, nil)
+	err = ts.Execute(w, nil)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Обработка POST-запроса страницы авторизации
@@ -218,13 +230,16 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
+	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string
 	}{
 		User:   u,
 		IdUser: u.Id.Hex(),
 	})
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Обработка запроса на смену данных пользователя
@@ -244,7 +259,6 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		Name:    r.FormValue("name"),
 		Surname: r.FormValue("surname"),
 	}
-
 	uG, err := getUserById(u.Id)
 	if err != nil {
 		app.serverError(w, err)
@@ -295,13 +309,16 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
+	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string
 	}{
 		User:   u,
 		IdUser: u.Id.Hex(),
 	})
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Обработка запроса на обновление пароля пользователя
@@ -375,13 +392,16 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	ts.Execute(w, struct {
+	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string
 	}{
 		User:   u,
 		IdUser: u.Id.Hex(),
 	})
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 //Обработка запроса на удаление пользователя
