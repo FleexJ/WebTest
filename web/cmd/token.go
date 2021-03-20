@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -28,8 +30,10 @@ func (t token) saveToken(w http.ResponseWriter) error {
 		newCookie(idCookieName, t.IdUser))
 	http.SetCookie(w,
 		newCookie(emailCookieName, t.EmailUser))
+	//base64 token save in cookie
+	base64Tkn := base64.StdEncoding.EncodeToString([]byte(t.Token))
 	http.SetCookie(w,
-		newCookie(tokenCookieName, t.Token))
+		newCookie(tokenCookieName, base64Tkn))
 	http.SetCookie(w,
 		newCookie(expiresCookieName, strconv.FormatInt(t.Expires, 10)))
 	session, err := getSession()
@@ -46,6 +50,12 @@ func (t token) saveToken(w http.ResponseWriter) error {
 			_ = collection.Remove(bson.M{"expires": el.Expires, "iduser:": el.IdUser})
 		}
 	}
+	//bcrypt token save in DB
+	bcryptTkn, err := bcrypt.GenerateFromPassword([]byte(t.Token), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	t.Token = string(bcryptTkn)
 	err = collection.Insert(t)
 	if err != nil {
 		return err
@@ -69,9 +79,25 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
-	_, err = collection.RemoveAll(bson.M{"id": t.IdUser, "token": t.Token})
+	var tkns []token
+	//Считываем из базы все токены текущего пользователя
+	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
+	if err != nil && err.Error() != "not found" {
+		return err
+	}
+	//Декодируем токен из куки
+	tDecode, err := base64.StdEncoding.DecodeString(t.Token)
 	if err != nil {
 		return err
+	}
+	for _, tkn := range tkns {
+		if bcrypt.CompareHashAndPassword([]byte(tkn.Token), tDecode) == nil {
+			//Удаление токена из БД
+			_, err = collection.RemoveAll(bson.M{"iduser": tkn.IdUser, "token": tkn.Token})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -84,13 +110,25 @@ func (t token) findInDB() (bool, error) {
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
-	var tkn *token
-	err = collection.Find(bson.M{"iduser": t.IdUser, "token": t.Token}).One(&tkn)
+	var tkns []token
+	//Считываем из базы все токены текущего пользователя
+	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
 	if err != nil && err.Error() == "not found" {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
-	return true, nil
+	//Декодируем токен из куки
+	tDecode, err := base64.StdEncoding.DecodeString(t.Token)
+	if err != nil {
+		return false, err
+	}
+	//Ищем совпадения токена в куки и БД
+	for _, tkn := range tkns {
+		if bcrypt.CompareHashAndPassword([]byte(tkn.Token), tDecode) == nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }

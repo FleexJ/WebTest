@@ -278,7 +278,7 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/logout/", http.StatusSeeOther)
 }
 
 //Отображение страницы смены пароля
@@ -361,7 +361,7 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/logout/", http.StatusSeeOther)
 }
 
 //Отображение страницы удаления пользователя
