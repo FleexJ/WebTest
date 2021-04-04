@@ -67,3 +67,15 @@ func getAllUsers() []user {
 	}
 	return users
 }
+
+//Удаляет все токены из базы
+func deleteAllOldTokens() error {
+	session, _ := getSession()
+	defer session.Close()
+	collection := session.DB(database).C(authCol)
+	_, err := collection.RemoveAll(nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
