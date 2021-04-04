@@ -6,7 +6,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type token struct {
@@ -39,14 +38,6 @@ func (t token) saveToken(w http.ResponseWriter) error {
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
-	//Удаление всех устаревших токенов
-	var tkns []token
-	_ = collection.Find(bson.M{"id": t.IdUser}).All(&tkns)
-	for _, el := range tkns {
-		if el.Expires <= time.Now().Unix() {
-			_ = collection.Remove(bson.M{"expires": el.Expires, "iduser:": el.IdUser})
-		}
-	}
 	//bcrypt token save in DB
 	bcryptTkn, err := bcrypt.GenerateFromPassword([]byte(t.Token), bcrypt.DefaultCost)
 	if err != nil {

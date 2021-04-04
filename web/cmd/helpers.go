@@ -68,9 +68,13 @@ func auth(w http.ResponseWriter, email, password string) error {
 	if err != nil {
 		return err
 	}
+	genToken, err := generateToken(u.Id.Hex())
+	if err != nil {
+		return err
+	}
 	tkn := token{
 		IdUser:  u.Id.Hex(),
-		Token:   generateToken(u.Id.Hex()),
+		Token:   genToken,
 		Expires: time.Now().Add(expDay * time.Hour).Unix(),
 	}
 	err = tkn.saveToken(w)
@@ -81,15 +85,18 @@ func auth(w http.ResponseWriter, email, password string) error {
 }
 
 //Генерирует новый токен на основе какого-то слова
-func generateToken(word string) string {
+func generateToken(word string) (string, error) {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	n := 20
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
-	bcryptB, _ := bcrypt.GenerateFromPassword(b, bcrypt.DefaultCost)
-	return word + string(bcryptB)
+	bcryptB, err := bcrypt.GenerateFromPassword(b, bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return word + string(bcryptB), nil
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе
