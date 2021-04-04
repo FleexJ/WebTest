@@ -25,6 +25,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
 	if tkn == nil {
 		err = ts.Execute(w, struct {
 			User *user
@@ -78,6 +79,7 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
 	err = ts.Execute(w, struct {
 		User  *user
 		Users []user
@@ -198,7 +200,7 @@ func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	app.infoLog.Println("Пользователь вышел:", tkn.EmailUser)
+	app.infoLog.Println("Пользователь вышел:", tkn.IdUser)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -230,6 +232,7 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
 	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string
@@ -278,7 +281,7 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, "/logout/", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 //Отображение страницы смены пароля
@@ -309,6 +312,7 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 		app.serverError(w, err)
 		return
 	}
+
 	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string
@@ -392,6 +396,7 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
 	err = ts.Execute(w, struct {
 		User   *user
 		IdUser string

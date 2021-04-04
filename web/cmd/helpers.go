@@ -11,7 +11,6 @@ import (
 
 const (
 	idCookieName      = "id"
-	emailCookieName   = "email"
 	tokenCookieName   = "token"
 	expiresCookieName = "expires"
 	expDay            = 60 * 24
@@ -20,10 +19,6 @@ const (
 //Вощвращает токен, считанный из куки
 func getTokenCookies(r *http.Request) *token {
 	cookieId, err := r.Cookie(idCookieName)
-	if err != nil {
-		return nil
-	}
-	cookieEmail, err := r.Cookie(emailCookieName)
 	if err != nil {
 		return nil
 	}
@@ -39,15 +34,13 @@ func getTokenCookies(r *http.Request) *token {
 	if err != nil {
 		return nil
 	}
-	if cookieId.Value == "" || cookieToken.Value == "" ||
-		cookieEmail.Value == "" || expires == 0 {
+	if cookieId.Value == "" || cookieToken.Value == "" || expires == 0 {
 		return nil
 	}
 	return &token{
-		IdUser:    cookieId.Value,
-		EmailUser: cookieEmail.Value,
-		Token:     cookieToken.Value,
-		Expires:   int64(expires),
+		IdUser:  cookieId.Value,
+		Token:   cookieToken.Value,
+		Expires: int64(expires),
 	}
 }
 
@@ -78,10 +71,9 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 		return "", err
 	}
 	tkn := token{
-		IdUser:    u.Id.Hex(),
-		EmailUser: u.Email,
-		Token:     generateToken(u.Id.Hex()),
-		Expires:   time.Now().Add(expDay * time.Hour).Unix(),
+		IdUser:  u.Id.Hex(),
+		Token:   generateToken(u.Id.Hex()),
+		Expires: time.Now().Add(expDay * time.Hour).Unix(),
 	}
 	err = tkn.saveToken(w)
 	if err != nil {

@@ -10,15 +10,14 @@ import (
 )
 
 type token struct {
-	IdUser    string
-	EmailUser string
-	Token     string
-	Expires   int64
+	IdUser  string
+	Token   string
+	Expires int64
 }
 
 //Проверка токена на пустоту
 func (t token) isEmpty() bool {
-	if t.EmailUser == "" || t.Token == "" || t.IdUser == "" || t.Expires == 0 {
+	if t.Token == "" || t.IdUser == "" || t.Expires == 0 {
 		return true
 	}
 	return false
@@ -28,8 +27,6 @@ func (t token) isEmpty() bool {
 func (t token) saveToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
 		newCookie(idCookieName, t.IdUser))
-	http.SetCookie(w,
-		newCookie(emailCookieName, t.EmailUser))
 	//base64 token save in cookie
 	base64Tkn := base64.StdEncoding.EncodeToString([]byte(t.Token))
 	http.SetCookie(w,
@@ -67,8 +64,6 @@ func (t token) saveToken(w http.ResponseWriter) error {
 func (t token) deleteToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
 		newCookie(idCookieName, ""))
-	http.SetCookie(w,
-		newCookie(emailCookieName, ""))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, ""))
 	http.SetCookie(w,
