@@ -5,18 +5,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
-	"strconv"
 )
 
 type token struct {
-	IdUser  string
-	Token   string
-	Expires int64
+	IdUser string
+	Token  string
 }
 
 //Проверка токена на пустоту
 func (t token) isEmpty() bool {
-	if t.Token == "" || t.IdUser == "" || t.Expires == 0 {
+	if t.Token == "" || t.IdUser == "" {
 		return true
 	}
 	return false
@@ -30,8 +28,6 @@ func (t token) saveToken(w http.ResponseWriter) error {
 	base64Tkn := base64.StdEncoding.EncodeToString([]byte(t.Token))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, base64Tkn))
-	http.SetCookie(w,
-		newCookie(expiresCookieName, strconv.FormatInt(t.Expires, 10)))
 	session, err := getSession()
 	if err != nil {
 		return err
@@ -57,8 +53,6 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 		newCookie(idCookieName, ""))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, ""))
-	http.SetCookie(w,
-		newCookie(expiresCookieName, ""))
 	session, err := getSession()
 	if err != nil {
 		return err

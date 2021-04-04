@@ -6,15 +6,13 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"time"
 )
 
 const (
-	idCookieName      = "id"
-	tokenCookieName   = "token"
-	expiresCookieName = "expires"
-	expDay            = 60 * 24
+	idCookieName    = "id"
+	tokenCookieName = "token"
+	expDay          = 60 * 24
 )
 
 //Вощвращает токен, считанный из куки
@@ -27,21 +25,12 @@ func getTokenCookies(r *http.Request) *token {
 	if err != nil {
 		return nil
 	}
-	cookieExpires, err := r.Cookie(expiresCookieName)
-	if err != nil {
-		return nil
-	}
-	expires, err := strconv.Atoi(cookieExpires.Value)
-	if err != nil {
-		return nil
-	}
-	if cookieId.Value == "" || cookieToken.Value == "" || expires == 0 {
+	if cookieId.Value == "" || cookieToken.Value == "" {
 		return nil
 	}
 	return &token{
-		IdUser:  cookieId.Value,
-		Token:   cookieToken.Value,
-		Expires: int64(expires),
+		IdUser: cookieId.Value,
+		Token:  cookieToken.Value,
 	}
 }
 
@@ -73,9 +62,8 @@ func auth(w http.ResponseWriter, email, password string) error {
 		return err
 	}
 	tkn := token{
-		IdUser:  u.Id.Hex(),
-		Token:   genToken,
-		Expires: time.Now().Add(expDay * time.Hour).Unix(),
+		IdUser: u.Id.Hex(),
+		Token:  genToken,
 	}
 	err = tkn.saveToken(w)
 	if err != nil {
@@ -96,7 +84,7 @@ func generateToken(word string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return word + string(bcryptB), nil
+	return word + string(time.Now().Unix()) + string(bcryptB), nil
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе
