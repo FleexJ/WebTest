@@ -3,7 +3,10 @@ package main
 import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
+	"regexp"
 )
+
+const regexEmail = `^\w+@\w+[.]\w+$`
 
 type user struct {
 	Id       bson.ObjectId `bson:"_id"`
@@ -15,7 +18,8 @@ type user struct {
 
 //Валидация пользователя перед записью в базу
 func (u *user) valid(repPassword string) bool {
-	if u.Email == "" ||
+	matched, _ := regexp.MatchString(regexEmail, u.Email)
+	if !matched ||
 		u.Name == "" ||
 		u.Surname == "" ||
 		u.Password == "" ||
@@ -23,7 +27,7 @@ func (u *user) valid(repPassword string) bool {
 		return false
 	}
 	uG := getUserByEmail(u.Email)
-	if uG != nil && u.Email == uG.Email && u.Id != uG.Id {
+	if uG != nil && u.Id != uG.Id {
 		return false
 	}
 	return true

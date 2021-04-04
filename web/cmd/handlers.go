@@ -206,7 +206,7 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		Surname: r.FormValue("surname"),
 	}
 	newU.Password = u.Password
-	if !u.valid(newU.Password) {
+	if !newU.valid(newU.Password) {
 		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
 		return
 	}
