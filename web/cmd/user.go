@@ -22,8 +22,8 @@ func (u *user) valid(repPassword string) bool {
 		u.Password != repPassword {
 		return false
 	}
-	uG, err := getUserByEmail(u.Email)
-	if err != nil || (uG != nil && u.Email == uG.Email && u.Id != uG.Id) {
+	uG := getUserByEmail(u.Email)
+	if uG != nil && u.Email == uG.Email && u.Id != uG.Id {
 		return false
 	}
 	return true
@@ -85,14 +85,14 @@ func (u user) updateUser() error {
 }
 
 //Обновление пароля пользователя
-func (u user) updateUserPassword() error {
+func (u user) updateUserPassword(password string) error {
 	session, err := getSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 	collection := session.DB(database).C(usersCol)
-	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}

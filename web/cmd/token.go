@@ -98,10 +98,10 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 }
 
 //Проверка на существование токена в базе
-func (t token) findInDB() (bool, error) {
+func (t token) findInDB() bool {
 	session, err := getSession()
 	if err != nil {
-		return false, err
+		return false
 	}
 	defer session.Close()
 	collection := session.DB(database).C(authCol)
@@ -109,21 +109,21 @@ func (t token) findInDB() (bool, error) {
 	//Считываем из базы все токены текущего пользователя
 	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
 	if err != nil && err.Error() == "not found" {
-		return false, nil
+		return false
 	}
 	if err != nil {
-		return false, err
+		return false
 	}
 	//Декодируем токен из куки
 	tDecode, err := base64.StdEncoding.DecodeString(t.Token)
 	if err != nil {
-		return false, err
+		return false
 	}
 	//Ищем совпадения токена в куки и БД
 	for _, tkn := range tkns {
 		if bcrypt.CompareHashAndPassword([]byte(tkn.Token), tDecode) == nil {
-			return true, nil
+			return true
 		}
 	}
-	return false, nil
+	return false
 }

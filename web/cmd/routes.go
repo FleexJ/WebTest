@@ -15,7 +15,7 @@ func (app *application) routes() *mux.Router {
 	router.HandleFunc("/signIn/", app.signInPageGET).Methods("GET")
 	router.HandleFunc("/signIn/", app.signInPagePOST).Methods("POST")
 
-	router.HandleFunc("/logout/", app.logOut)
+	router.HandleFunc("/logout/", app.logout)
 
 	router.HandleFunc("/changeUser/", app.changeUserGET).Methods("GET")
 	router.HandleFunc("/changeUser/", app.changeUserPOST).Methods("POST")

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
@@ -58,17 +59,14 @@ func newCookie(name, value string) *http.Cookie {
 //Ищет совпадения в базе пользователей
 //Выдает новый токен доступа
 //при успехе возвращается пустая строка
-func auth(w http.ResponseWriter, email, password string) (string, error) {
-	u, err := getUserByEmail(email)
-	if err != nil {
-		return "", err
-	}
+func auth(w http.ResponseWriter, email, password string) error {
+	u := getUserByEmail(email)
 	if u == nil {
-		return "User not found", nil
+		return errors.New("user not found")
 	}
-	err = u.comparePassword(password)
+	err := u.comparePassword(password)
 	if err != nil {
-		return "", err
+		return err
 	}
 	tkn := token{
 		IdUser:  u.Id.Hex(),
@@ -77,9 +75,9 @@ func auth(w http.ResponseWriter, email, password string) (string, error) {
 	}
 	err = tkn.saveToken(w)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return "", nil
+	return nil
 }
 
 //Генерирует новый токен на основе какого-то слова
@@ -95,24 +93,18 @@ func generateToken(word string) string {
 }
 
 //Проверка токена доступа, возвращает токен с данными при успехе
-func checkAuth(r *http.Request) (*token, error) {
+func checkAuth(r *http.Request) (*token, *user) {
 	tkn := getTokenCookies(r)
 	if tkn == nil {
 		return nil, nil
 	}
-	is, err := tkn.findInDB()
-	if err != nil {
-		return nil, err
-	}
+	is := tkn.findInDB()
 	if !is {
 		return nil, nil
 	}
-	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil {
-		return nil, err
-	}
+	u := getUserById(bson.ObjectIdHex(tkn.IdUser))
 	if u == nil {
 		return nil, nil
 	}
-	return tkn, nil
+	return tkn, u
 }

@@ -20,24 +20,14 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	if tkn == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		err = ts.Execute(w, struct {
 			User *user
 		}{
 			User: nil,
 		})
 	} else {
-		u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-		if err != nil {
-			app.serverError(w, err)
-			return
-		}
 		err = ts.Execute(w, struct {
 			User *user
 		}{
@@ -51,12 +41,8 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -68,18 +54,7 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	users, err := getAllUsers()
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
+	users := getAllUsers()
 	err = ts.Execute(w, struct {
 		User  *user
 		Users []user
@@ -94,12 +69,8 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn != nil {
+	tkn, u := checkAuth(r)
+	if tkn != nil || u != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -143,12 +114,8 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn != nil {
+	tkn, u := checkAuth(r)
+	if tkn != nil || u != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -175,8 +142,8 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/signIn/", http.StatusSeeOther)
 		return
 	}
-	msg, err := auth(w, email, password)
-	if msg != "" || err != nil {
+	err := auth(w, email, password)
+	if err != nil {
 		http.Redirect(w, r, "/signIn/", http.StatusSeeOther)
 		return
 	}
@@ -185,42 +152,25 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 }
 
 //Выход из учетной записи
-func (app *application) logOut(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+func (app *application) logout(w http.ResponseWriter, r *http.Request) {
+	tkn, u := checkAuth(r)
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	err = tkn.deleteToken(w)
+	err := tkn.deleteToken(w)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	app.infoLog.Println("Пользователь вышел:", tkn.IdUser)
+	app.infoLog.Println("Пользователь вышел:", u.Email, "\tid:", u.Id)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if u == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -232,13 +182,10 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
 	err = ts.Execute(w, struct {
-		User   *user
-		IdUser string
+		User *user
 	}{
-		User:   u,
-		IdUser: u.Id.Hex(),
+		User: u,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -247,36 +194,23 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка запроса на смену данных пользователя
 func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	u := user{
-		Id:      bson.ObjectIdHex(tkn.IdUser),
+	newU := user{
+		Id:      u.Id,
 		Email:   r.FormValue("email"),
 		Name:    r.FormValue("name"),
 		Surname: r.FormValue("surname"),
 	}
-	uG, err := getUserById(u.Id)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if uG == nil {
+	newU.Password = u.Password
+	if !u.valid(newU.Password) {
 		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
 		return
 	}
-	u.Password = uG.Password
-	if !u.valid(u.Password) {
-		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
-		return
-	}
-	err = u.updateUser()
+	err := newU.updateUser()
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -286,21 +220,8 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы смены пароля
 func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if u == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -314,11 +235,9 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 	}
 
 	err = ts.Execute(w, struct {
-		User   *user
-		IdUser string
+		User *user
 	}{
-		User:   u,
-		IdUser: u.Id.Hex(),
+		User: u,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -327,16 +246,11 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 
 //Обработка запроса на обновление пароля пользователя
 func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	id := bson.ObjectIdHex(tkn.IdUser)
 	password := r.FormValue("password")
 	newPassword := r.FormValue("newPassword")
 	repNewPassword := r.FormValue("repNewPassword")
@@ -345,22 +259,12 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
 		return
 	}
-	u, err := getUserById(id)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if u == nil {
-		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
-		return
-	}
-	err = u.comparePassword(password)
+	err := u.comparePassword(password)
 	if err != nil {
 		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
 		return
 	}
-	u.Password = newPassword
-	err = u.updateUserPassword()
+	err = u.updateUserPassword(newPassword)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -370,21 +274,8 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 
 //Отображение страницы удаления пользователя
 func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	u, err := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if u == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -398,11 +289,9 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ts.Execute(w, struct {
-		User   *user
-		IdUser string
+		User *user
 	}{
-		User:   u,
-		IdUser: u.Id.Hex(),
+		User: u,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -411,32 +300,18 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка запроса на удаление пользователя
 func (app *application) deleteUserPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, err := checkAuth(r)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if tkn == nil {
+	tkn, u := checkAuth(r)
+	if tkn == nil || u == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	id := bson.ObjectIdHex(tkn.IdUser)
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if password == "" || email == "" {
 		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
 		return
 	}
-	u, err := getUserById(id)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if u == nil {
-		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
-		return
-	}
-	err = u.comparePassword(password)
+	err := u.comparePassword(password)
 	if err != nil {
 		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
 		return
