@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,9 +25,9 @@ func main() {
 
 	err := deleteAllOldTokens()
 	if err != nil {
-		fmt.Println("Error delete all old tokens:", err)
+		app.errorLog.Println("Error deleting old tokens:", err)
 	} else {
-		fmt.Println("All old tokens deleted")
+		app.infoLog.Println("All old tokens deleted")
 	}
 	app.infoLog.Println("Запуск веб-сервера на http://127.0.0.1:4000")
 	app.errorLog.Fatal(srv.ListenAndServe())

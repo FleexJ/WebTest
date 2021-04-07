@@ -109,7 +109,7 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.infoLog.Println("Новый пользователь:", u.Email)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/signIn/", http.StatusSeeOther)
 }
 
 //Отображение страницы авторизации

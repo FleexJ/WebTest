@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -15,7 +16,7 @@ const (
 	expDay          = 60 * 24
 )
 
-//Вощвращает токен, считанный из куки
+//Возвращает токен, считанный из куки
 func getTokenCookies(r *http.Request) *token {
 	cookieId, err := r.Cookie(idCookieName)
 	if err != nil {
@@ -47,7 +48,7 @@ func newCookie(name, value string) *http.Cookie {
 //Функция авторизации пользователя
 //Ищет совпадения в базе пользователей
 //Выдает новый токен доступа
-//при успехе возвращается пустая строка
+//при успехе нет ошибки
 func auth(w http.ResponseWriter, email, password string) error {
 	u := getUserByEmail(email)
 	if u == nil {
@@ -72,7 +73,7 @@ func auth(w http.ResponseWriter, email, password string) error {
 	return nil
 }
 
-//Генерирует новый токен на основе какого-то слова
+//Генерирует новый токен на основе слова
 func generateToken(word string) (string, error) {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	n := 20
@@ -84,10 +85,10 @@ func generateToken(word string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return word + string(time.Now().Unix()) + string(bcryptB), nil
+	return word + strconv.FormatInt(time.Now().Unix(), 10) + string(bcryptB), nil
 }
 
-//Проверка токена доступа, возвращает токен с данными при успехе
+//Проверка токена доступа, возвращает токен с данными и текущего пользователя при успехе
 func checkAuth(r *http.Request) (*token, *user) {
 	tkn := getTokenCookies(r)
 	if tkn == nil {

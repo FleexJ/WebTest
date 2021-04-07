@@ -12,7 +12,7 @@ const (
 	authCol  = "aut"
 )
 
-//Получение сессии для связи с базой
+//Получение сессии
 func getSession() (*mgo.Session, error) {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
@@ -21,7 +21,7 @@ func getSession() (*mgo.Session, error) {
 	return session, nil
 }
 
-//Получение пользователя под адресу почты
+//Получение пользователя по адресу почты
 func getUserByEmail(email string) *user {
 	session, err := getSession()
 	if err != nil {
@@ -52,7 +52,7 @@ func getUserById(id bson.ObjectId) *user {
 	return &u
 }
 
-//Возвращается список всех пользователей
+//Возвращает список всех пользователей
 func getAllUsers() []user {
 	session, err := getSession()
 	if err != nil {
