@@ -2,6 +2,7 @@ package main
 
 import (
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"regexp"
 )
@@ -53,7 +54,7 @@ func (u *user) comparePassword(password string) error {
 
 //Сохранение пользователя в базе
 func (u user) saveUser() error {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
@@ -75,7 +76,7 @@ func (u user) saveUser() error {
 
 //Обновление данных пользователя
 func (u user) updateUser() error {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func (u user) updateUser() error {
 
 //Обновление пароля пользователя
 func (u user) updateUserPassword(password string) error {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
@@ -110,7 +111,7 @@ func (u user) updateUserPassword(password string) error {
 
 //Удаление пользователя из базы
 func (u user) deleteUser() error {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}

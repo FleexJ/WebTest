@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 )
@@ -28,7 +29,7 @@ func (t token) saveToken(w http.ResponseWriter) error {
 	base64Tkn := base64.StdEncoding.EncodeToString([]byte(t.Token))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, base64Tkn))
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
@@ -53,7 +54,7 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 		newCookie(idCookieName, ""))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, ""))
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 
 //Проверка на существование токена в базе
 func (t token) findInDB() bool {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return false
 	}

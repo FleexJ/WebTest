@@ -12,18 +12,9 @@ const (
 	authCol  = "aut"
 )
 
-//Получение сессии
-func getSession() (*mgo.Session, error) {
-	session, err := mgo.Dial(mongoUrl)
-	if err != nil {
-		return nil, err
-	}
-	return session, nil
-}
-
 //Получение пользователя по адресу почты
 func getUserByEmail(email string) *user {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
 	}
@@ -38,7 +29,7 @@ func getUserByEmail(email string) *user {
 }
 
 func getUserById(id bson.ObjectId) *user {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
 	}
@@ -54,7 +45,7 @@ func getUserById(id bson.ObjectId) *user {
 
 //Возвращает список всех пользователей
 func getAllUsers() []user {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
 	}
@@ -70,7 +61,7 @@ func getAllUsers() []user {
 
 //Удаляет все токены из базы
 func deleteAllOldTokens() error {
-	session, err := getSession()
+	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
 	}
