@@ -19,12 +19,14 @@ func getUserByEmail(email string) *user {
 		return nil
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	var u user
 	err = collection.Find(bson.M{"email": email}).One(&u)
 	if err != nil {
 		return nil
 	}
+
 	return &u
 }
 
@@ -34,12 +36,14 @@ func getUserById(id bson.ObjectId) *user {
 		return nil
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	var u user
 	err = collection.Find(bson.M{"_id": id}).One(&u)
 	if err != nil {
 		return nil
 	}
+
 	return &u
 }
 
@@ -50,12 +54,14 @@ func getAllUsers() []user {
 		return nil
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	var users []user
 	err = collection.Find(bson.M{}).All(&users)
 	if err != nil {
 		return nil
 	}
+
 	return users
 }
 
@@ -66,10 +72,12 @@ func deleteAllOldTokens() error {
 		return err
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(authCol)
 	_, err = collection.RemoveAll(nil)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

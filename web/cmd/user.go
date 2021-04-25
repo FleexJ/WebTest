@@ -27,10 +27,12 @@ func (u *user) valid(repPassword string) bool {
 		u.Password != repPassword {
 		return false
 	}
+
 	uG := getUserByEmail(u.Email)
 	if uG != nil && u.Id != uG.Id {
 		return false
 	}
+
 	return true
 }
 
@@ -59,11 +61,13 @@ func (u user) saveUser() error {
 		return err
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
+
 	u.Password = string(bcryptPassw)
 	u.Id = bson.NewObjectId()
 	err = collection.Insert(u)
@@ -81,11 +85,13 @@ func (u user) updateUser() error {
 		return err
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	err = collection.Update(bson.M{"_id": u.Id}, u)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -96,16 +102,19 @@ func (u user) updateUserPassword(password string) error {
 		return err
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
+
 	u.Password = string(bcryptPassw)
 	err = collection.Update(bson.M{"_id": u.Id}, u)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -116,10 +125,12 @@ func (u user) deleteUser() error {
 		return err
 	}
 	defer session.Close()
+
 	collection := session.DB(database).C(usersCol)
 	err = collection.Remove(bson.M{"_id": u.Id})
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

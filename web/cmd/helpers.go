@@ -22,13 +22,16 @@ func getTokenCookies(r *http.Request) *token {
 	if err != nil {
 		return nil
 	}
+
 	cookieToken, err := r.Cookie(tokenCookieName)
 	if err != nil {
 		return nil
 	}
+
 	if cookieId.Value == "" || cookieToken.Value == "" {
 		return nil
 	}
+
 	return &token{
 		IdUser: cookieId.Value,
 		Token:  cookieToken.Value,
@@ -54,18 +57,22 @@ func auth(w http.ResponseWriter, email, password string) error {
 	if u == nil {
 		return errors.New("user not found")
 	}
+
 	err := u.comparePassword(password)
 	if err != nil {
 		return err
 	}
+
 	genToken, err := generateToken(u.Id.Hex())
 	if err != nil {
 		return err
 	}
+
 	tkn := token{
 		IdUser: u.Id.Hex(),
 		Token:  genToken,
 	}
+
 	err = tkn.saveToken(w)
 	if err != nil {
 		return err
@@ -94,10 +101,12 @@ func checkAuth(r *http.Request) (*token, *user) {
 	if tkn == nil {
 		return nil, nil
 	}
+
 	is := tkn.findInDB()
 	if !is {
 		return nil, nil
 	}
+
 	u := getUserById(bson.ObjectIdHex(tkn.IdUser))
 	if u == nil {
 		return nil, nil
