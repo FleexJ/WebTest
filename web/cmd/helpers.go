@@ -53,23 +53,23 @@ func newCookie(name, value string) *http.Cookie {
 //Выдает новый токен доступа
 //при успехе нет ошибки
 func auth(w http.ResponseWriter, email, password string) error {
-	u := getUserByEmail(email)
-	if u == nil {
+	usr := getUserByEmail(email)
+	if usr == nil {
 		return errors.New("user not found")
 	}
 
-	err := u.comparePassword(password)
+	err := usr.comparePassword(password)
 	if err != nil {
 		return err
 	}
 
-	genToken, err := generateToken(u.Id.Hex())
+	genToken, err := generateToken(usr.Id.Hex())
 	if err != nil {
 		return err
 	}
 
 	tkn := Token{
-		IdUser: u.Id.Hex(),
+		IdUser: usr.Id.Hex(),
 		Token:  genToken,
 	}
 
@@ -107,9 +107,9 @@ func checkAuth(r *http.Request) (*Token, *User) {
 		return nil, nil
 	}
 
-	u := getUserById(bson.ObjectIdHex(tkn.IdUser))
-	if u == nil {
+	usr := getUserById(bson.ObjectIdHex(tkn.IdUser))
+	if usr == nil {
 		return nil, nil
 	}
-	return tkn, u
+	return tkn, usr
 }

@@ -14,19 +14,19 @@ type Token struct {
 }
 
 //Проверка токена на пустоту
-func (t Token) isEmpty() bool {
-	if t.Token == "" || t.IdUser == "" {
+func (tkn Token) isEmpty() bool {
+	if tkn.Token == "" || tkn.IdUser == "" {
 		return true
 	}
 	return false
 }
 
 //Сохраняет токен в базе
-func (t Token) saveToken(w http.ResponseWriter) error {
+func (tkn Token) saveToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
-		newCookie(idCookieName, t.IdUser))
+		newCookie(idCookieName, tkn.IdUser))
 	//base64 token save in cookie
-	base64Tkn := base64.StdEncoding.EncodeToString([]byte(t.Token))
+	base64Tkn := base64.StdEncoding.EncodeToString([]byte(tkn.Token))
 	http.SetCookie(w,
 		newCookie(tokenCookieName, base64Tkn))
 
@@ -38,13 +38,13 @@ func (t Token) saveToken(w http.ResponseWriter) error {
 
 	collection := session.DB(database).C(authCol)
 	//bcrypt token save in DB
-	bcryptTkn, err := bcrypt.GenerateFromPassword([]byte(t.Token), bcrypt.DefaultCost)
+	bcryptTkn, err := bcrypt.GenerateFromPassword([]byte(tkn.Token), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	t.Token = string(bcryptTkn)
-	err = collection.Insert(t)
+	tkn.Token = string(bcryptTkn)
+	err = collection.Insert(tkn)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (t Token) saveToken(w http.ResponseWriter) error {
 }
 
 //Удаляет токен из базы и из куки
-func (t Token) deleteToken(w http.ResponseWriter) error {
+func (tkn Token) deleteToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
 		newCookie(idCookieName, ""))
 	http.SetCookie(w,
@@ -68,13 +68,13 @@ func (t Token) deleteToken(w http.ResponseWriter) error {
 	collection := session.DB(database).C(authCol)
 	var tkns []Token
 	//Считываем из базы все токены текущего пользователя
-	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
+	err = collection.Find(bson.M{"iduser": tkn.IdUser}).All(&tkns)
 	if err != nil && err.Error() != "not found" {
 		return err
 	}
 
 	//Декодируем токен из куки
-	tDecode, err := base64.StdEncoding.DecodeString(t.Token)
+	tDecode, err := base64.StdEncoding.DecodeString(tkn.Token)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (t Token) deleteToken(w http.ResponseWriter) error {
 }
 
 //Проверка на существование токена в базе
-func (t Token) findInDB() bool {
+func (tkn Token) findInDB() bool {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return false
@@ -101,7 +101,7 @@ func (t Token) findInDB() bool {
 	collection := session.DB(database).C(authCol)
 	var tkns []Token
 	//Считываем из базы все токены текущего пользователя
-	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
+	err = collection.Find(bson.M{"iduser": tkn.IdUser}).All(&tkns)
 	if err != nil && err.Error() == "not found" {
 		return false
 	}
@@ -110,7 +110,7 @@ func (t Token) findInDB() bool {
 	}
 
 	//Декодируем токен из куки
-	tDecode, err := base64.StdEncoding.DecodeString(t.Token)
+	tDecode, err := base64.StdEncoding.DecodeString(tkn.Token)
 	if err != nil {
 		return false
 	}

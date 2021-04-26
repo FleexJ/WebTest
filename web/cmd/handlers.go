@@ -22,8 +22,8 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		err = ts.Execute(w, struct {
 			User *User
 		}{
@@ -33,7 +33,7 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 		err = ts.Execute(w, struct {
 			User *User
 		}{
-			User: u,
+			User: usr,
 		})
 	}
 	if err != nil {
@@ -43,8 +43,8 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Страница отображения всех пользователей
 func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -63,7 +63,7 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 		User  *User
 		Users []User
 	}{
-		User:  u,
+		User:  usr,
 		Users: users,
 	})
 	if err != nil {
@@ -73,8 +73,8 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы регистрации
 func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn != nil || u != nil {
+	tkn, usr := checkAuth(r)
+	if tkn != nil || usr != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -96,7 +96,7 @@ func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка POST-запроса страницы регистрации
 func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
-	u := User{
+	usr := User{
 		Id:       bson.NewObjectId(),
 		Email:    r.FormValue("email"),
 		Name:     r.FormValue("name"),
@@ -105,25 +105,25 @@ func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
 	}
 	repPassword := r.FormValue("repPassword")
 
-	if !u.valid(repPassword) {
+	if !usr.valid(repPassword) {
 		http.Redirect(w, r, "/signUp/", http.StatusSeeOther)
 		return
 	}
 
-	err := u.saveUser()
+	err := usr.saveUser()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	app.infoLog.Println("Новый пользователь:", u.Email)
+	app.infoLog.Println("Новый пользователь:", usr.Email)
 	http.Redirect(w, r, "/signIn/", http.StatusSeeOther)
 }
 
 //Отображение страницы авторизации
 func (app *application) signInPageGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn != nil || u != nil {
+	tkn, usr := checkAuth(r)
+	if tkn != nil || usr != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -165,7 +165,7 @@ func (app *application) signInPagePOST(w http.ResponseWriter, r *http.Request) {
 
 //Выход из учетной записи
 func (app *application) logout(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
+	tkn, usr := checkAuth(r)
 	if tkn == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -177,13 +177,13 @@ func (app *application) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.infoLog.Println("Пользователь вышел:", u.Email, "\tid:", u.Id)
+	app.infoLog.Println("Пользователь вышел:", usr.Email, "\tid:", usr.Id)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -200,7 +200,7 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 	err = ts.Execute(w, struct {
 		User *User
 	}{
-		User: u,
+		User: usr,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -209,18 +209,18 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка запроса на смену данных пользователя
 func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	newU := User{
-		Id:       u.Id,
+		Id:       usr.Id,
 		Email:    r.FormValue("email"),
 		Name:     r.FormValue("name"),
 		Surname:  r.FormValue("surname"),
-		Password: u.Password,
+		Password: usr.Password,
 	}
 	if !newU.valid(newU.Password) {
 		http.Redirect(w, r, "/changeUser/", http.StatusSeeOther)
@@ -238,8 +238,8 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 
 //Отображение страницы смены пароля
 func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -256,7 +256,7 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 	err = ts.Execute(w, struct {
 		User *User
 	}{
-		User: u,
+		User: usr,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -265,8 +265,8 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 
 //Обработка запроса на обновление пароля пользователя
 func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -280,13 +280,13 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := u.comparePassword(password)
+	err := usr.comparePassword(password)
 	if err != nil {
 		http.Redirect(w, r, "/changePassword/", http.StatusSeeOther)
 		return
 	}
 
-	err = u.updateUserPassword(newPassword)
+	err = usr.updateUserPassword(newPassword)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -297,8 +297,8 @@ func (app *application) changePasswordPOST(w http.ResponseWriter, r *http.Reques
 
 //Отображение страницы удаления пользователя
 func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -315,7 +315,7 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 	err = ts.Execute(w, struct {
 		User *User
 	}{
-		User: u,
+		User: usr,
 	})
 	if err != nil {
 		app.serverError(w, err)
@@ -324,8 +324,8 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка запроса на удаление пользователя
 func (app *application) deleteUserPOST(w http.ResponseWriter, r *http.Request) {
-	tkn, u := checkAuth(r)
-	if tkn == nil || u == nil {
+	tkn, usr := checkAuth(r)
+	if tkn == nil || usr == nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -337,18 +337,18 @@ func (app *application) deleteUserPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := u.comparePassword(password)
+	err := usr.comparePassword(password)
 	if err != nil {
 		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
 		return
 	}
 
-	if email != u.Email {
+	if email != usr.Email {
 		http.Redirect(w, r, "/deleteUser/", http.StatusSeeOther)
 		return
 	}
 
-	err = u.deleteUser()
+	err = usr.deleteUser()
 	if err != nil {
 		app.serverError(w, err)
 		return

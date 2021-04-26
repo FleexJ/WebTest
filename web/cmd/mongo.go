@@ -21,13 +21,13 @@ func getUserByEmail(email string) *User {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	var u User
-	err = collection.Find(bson.M{"email": email}).One(&u)
+	var usr User
+	err = collection.Find(bson.M{"email": email}).One(&usr)
 	if err != nil {
 		return nil
 	}
 
-	return &u
+	return &usr
 }
 
 func getUserById(id bson.ObjectId) *User {
@@ -38,13 +38,13 @@ func getUserById(id bson.ObjectId) *User {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	var u User
-	err = collection.Find(bson.M{"_id": id}).One(&u)
+	var usr User
+	err = collection.Find(bson.M{"_id": id}).One(&usr)
 	if err != nil {
 		return nil
 	}
 
-	return &u
+	return &usr
 }
 
 //Возвращает список всех пользователей

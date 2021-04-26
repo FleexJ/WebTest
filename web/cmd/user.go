@@ -18,18 +18,18 @@ type User struct {
 }
 
 //Валидация пользователя перед записью в базу
-func (u *User) valid(repPassword string) bool {
-	matched, _ := regexp.MatchString(regexEmail, u.Email)
+func (usr *User) valid(repPassword string) bool {
+	matched, _ := regexp.MatchString(regexEmail, usr.Email)
 	if !matched ||
-		u.Name == "" ||
-		u.Surname == "" ||
-		u.Password == "" ||
-		u.Password != repPassword {
+		usr.Name == "" ||
+		usr.Surname == "" ||
+		usr.Password == "" ||
+		usr.Password != repPassword {
 		return false
 	}
 
-	uG := getUserByEmail(u.Email)
-	if uG != nil && u.Id != uG.Id {
+	uG := getUserByEmail(usr.Email)
+	if uG != nil && usr.Id != uG.Id {
 		return false
 	}
 
@@ -37,8 +37,8 @@ func (u *User) valid(repPassword string) bool {
 }
 
 //Сравнение пароля пользователя
-func (u *User) comparePassword(password string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+func (usr *User) comparePassword(password string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(password))
 	if err == nil {
 		return nil
 	}
@@ -46,7 +46,7 @@ func (u *User) comparePassword(password string) error {
 }
 
 //Сохранение пользователя в базе
-func (u User) saveUser() error {
+func (usr User) saveUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -54,14 +54,14 @@ func (u User) saveUser() error {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	bcryptPassw, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	u.Password = string(bcryptPassw)
-	u.Id = bson.NewObjectId()
-	err = collection.Insert(u)
+	usr.Password = string(bcryptPassw)
+	usr.Id = bson.NewObjectId()
+	err = collection.Insert(usr)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (u User) saveUser() error {
 }
 
 //Обновление данных пользователя
-func (u User) updateUser() error {
+func (usr User) updateUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (u User) updateUser() error {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	err = collection.Update(bson.M{"_id": u.Id}, u)
+	err = collection.Update(bson.M{"_id": usr.Id}, usr)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (u User) updateUser() error {
 }
 
 //Обновление пароля пользователя
-func (u User) updateUserPassword(password string) error {
+func (usr User) updateUserPassword(password string) error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -100,8 +100,8 @@ func (u User) updateUserPassword(password string) error {
 		return err
 	}
 
-	u.Password = string(bcryptPassw)
-	err = collection.Update(bson.M{"_id": u.Id}, u)
+	usr.Password = string(bcryptPassw)
+	err = collection.Update(bson.M{"_id": usr.Id}, usr)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (u User) updateUserPassword(password string) error {
 }
 
 //Удаление пользователя из базы
-func (u User) deleteUser() error {
+func (usr User) deleteUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (u User) deleteUser() error {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	err = collection.Remove(bson.M{"_id": u.Id})
+	err = collection.Remove(bson.M{"_id": usr.Id})
 	if err != nil {
 		return err
 	}
