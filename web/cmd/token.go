@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-type token struct {
+type Token struct {
 	IdUser string
 	Token  string
 }
 
 //Проверка токена на пустоту
-func (t token) isEmpty() bool {
+func (t Token) isEmpty() bool {
 	if t.Token == "" || t.IdUser == "" {
 		return true
 	}
@@ -22,7 +22,7 @@ func (t token) isEmpty() bool {
 }
 
 //Сохраняет токен в базе
-func (t token) saveToken(w http.ResponseWriter) error {
+func (t Token) saveToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
 		newCookie(idCookieName, t.IdUser))
 	//base64 token save in cookie
@@ -53,7 +53,7 @@ func (t token) saveToken(w http.ResponseWriter) error {
 }
 
 //Удаляет токен из базы и из куки
-func (t token) deleteToken(w http.ResponseWriter) error {
+func (t Token) deleteToken(w http.ResponseWriter) error {
 	http.SetCookie(w,
 		newCookie(idCookieName, ""))
 	http.SetCookie(w,
@@ -66,7 +66,7 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 	defer session.Close()
 
 	collection := session.DB(database).C(authCol)
-	var tkns []token
+	var tkns []Token
 	//Считываем из базы все токены текущего пользователя
 	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
 	if err != nil && err.Error() != "not found" {
@@ -91,7 +91,7 @@ func (t token) deleteToken(w http.ResponseWriter) error {
 }
 
 //Проверка на существование токена в базе
-func (t token) findInDB() bool {
+func (t Token) findInDB() bool {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return false
@@ -99,7 +99,7 @@ func (t token) findInDB() bool {
 	defer session.Close()
 
 	collection := session.DB(database).C(authCol)
-	var tkns []token
+	var tkns []Token
 	//Считываем из базы все токены текущего пользователя
 	err = collection.Find(bson.M{"iduser": t.IdUser}).All(&tkns)
 	if err != nil && err.Error() == "not found" {

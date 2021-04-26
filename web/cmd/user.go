@@ -9,7 +9,7 @@ import (
 
 const regexEmail = `^\w+@\w+[.]\w+$`
 
-type user struct {
+type User struct {
 	Id       bson.ObjectId `bson:"_id"`
 	Email    string
 	Name     string
@@ -18,7 +18,7 @@ type user struct {
 }
 
 //Валидация пользователя перед записью в базу
-func (u *user) valid(repPassword string) bool {
+func (u *User) valid(repPassword string) bool {
 	matched, _ := regexp.MatchString(regexEmail, u.Email)
 	if !matched ||
 		u.Name == "" ||
@@ -36,17 +36,8 @@ func (u *user) valid(repPassword string) bool {
 	return true
 }
 
-//Проверка пользователя на пустоту
-func (u user) isEmpty() bool {
-	empty := user{}
-	if u == empty {
-		return true
-	}
-	return false
-}
-
 //Сравнение пароля пользователя
-func (u *user) comparePassword(password string) error {
+func (u *User) comparePassword(password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	if err == nil {
 		return nil
@@ -55,7 +46,7 @@ func (u *user) comparePassword(password string) error {
 }
 
 //Сохранение пользователя в базе
-func (u user) saveUser() error {
+func (u User) saveUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -79,7 +70,7 @@ func (u user) saveUser() error {
 }
 
 //Обновление данных пользователя
-func (u user) updateUser() error {
+func (u User) updateUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -96,7 +87,7 @@ func (u user) updateUser() error {
 }
 
 //Обновление пароля пользователя
-func (u user) updateUserPassword(password string) error {
+func (u User) updateUserPassword(password string) error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err
@@ -119,7 +110,7 @@ func (u user) updateUserPassword(password string) error {
 }
 
 //Удаление пользователя из базы
-func (u user) deleteUser() error {
+func (u User) deleteUser() error {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return err

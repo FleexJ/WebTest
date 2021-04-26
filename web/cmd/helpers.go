@@ -17,7 +17,7 @@ const (
 )
 
 //Возвращает токен, считанный из куки
-func getTokenCookies(r *http.Request) *token {
+func getTokenCookies(r *http.Request) *Token {
 	cookieId, err := r.Cookie(idCookieName)
 	if err != nil {
 		return nil
@@ -32,7 +32,7 @@ func getTokenCookies(r *http.Request) *token {
 		return nil
 	}
 
-	return &token{
+	return &Token{
 		IdUser: cookieId.Value,
 		Token:  cookieToken.Value,
 	}
@@ -68,7 +68,7 @@ func auth(w http.ResponseWriter, email, password string) error {
 		return err
 	}
 
-	tkn := token{
+	tkn := Token{
 		IdUser: u.Id.Hex(),
 		Token:  genToken,
 	}
@@ -96,7 +96,7 @@ func generateToken(word string) (string, error) {
 }
 
 //Проверка токена доступа, возвращает токен с данными и текущего пользователя при успехе
-func checkAuth(r *http.Request) (*token, *user) {
+func checkAuth(r *http.Request) (*Token, *User) {
 	tkn := getTokenCookies(r)
 	if tkn == nil {
 		return nil, nil

@@ -13,7 +13,7 @@ const (
 )
 
 //Получение пользователя по адресу почты
-func getUserByEmail(email string) *user {
+func getUserByEmail(email string) *User {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
@@ -21,7 +21,7 @@ func getUserByEmail(email string) *user {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	var u user
+	var u User
 	err = collection.Find(bson.M{"email": email}).One(&u)
 	if err != nil {
 		return nil
@@ -30,7 +30,7 @@ func getUserByEmail(email string) *user {
 	return &u
 }
 
-func getUserById(id bson.ObjectId) *user {
+func getUserById(id bson.ObjectId) *User {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
@@ -38,7 +38,7 @@ func getUserById(id bson.ObjectId) *user {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	var u user
+	var u User
 	err = collection.Find(bson.M{"_id": id}).One(&u)
 	if err != nil {
 		return nil
@@ -48,7 +48,7 @@ func getUserById(id bson.ObjectId) *user {
 }
 
 //Возвращает список всех пользователей
-func getAllUsers() []user {
+func getAllUsers() []User {
 	session, err := mgo.Dial(mongoUrl)
 	if err != nil {
 		return nil
@@ -56,7 +56,7 @@ func getAllUsers() []user {
 	defer session.Close()
 
 	collection := session.DB(database).C(usersCol)
-	var users []user
+	var users []User
 	err = collection.Find(bson.M{}).All(&users)
 	if err != nil {
 		return nil

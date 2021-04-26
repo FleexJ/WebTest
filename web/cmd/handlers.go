@@ -25,13 +25,13 @@ func (app *application) indexPageGET(w http.ResponseWriter, r *http.Request) {
 	tkn, u := checkAuth(r)
 	if tkn == nil || u == nil {
 		err = ts.Execute(w, struct {
-			User *user
+			User *User
 		}{
 			User: nil,
 		})
 	} else {
 		err = ts.Execute(w, struct {
-			User *user
+			User *User
 		}{
 			User: u,
 		})
@@ -60,8 +60,8 @@ func (app *application) usersPageGET(w http.ResponseWriter, r *http.Request) {
 
 	users := getAllUsers()
 	err = ts.Execute(w, struct {
-		User  *user
-		Users []user
+		User  *User
+		Users []User
 	}{
 		User:  u,
 		Users: users,
@@ -96,7 +96,7 @@ func (app *application) signUpPageGET(w http.ResponseWriter, r *http.Request) {
 
 //Обработка POST-запроса страницы регистрации
 func (app *application) signUpPagePOST(w http.ResponseWriter, r *http.Request) {
-	u := user{
+	u := User{
 		Id:       bson.NewObjectId(),
 		Email:    r.FormValue("email"),
 		Name:     r.FormValue("name"),
@@ -198,7 +198,7 @@ func (app *application) changeUserGET(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ts.Execute(w, struct {
-		User *user
+		User *User
 	}{
 		User: u,
 	})
@@ -215,7 +215,7 @@ func (app *application) changeUserPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newU := user{
+	newU := User{
 		Id:       u.Id,
 		Email:    r.FormValue("email"),
 		Name:     r.FormValue("name"),
@@ -254,7 +254,7 @@ func (app *application) changePasswordGET(w http.ResponseWriter, r *http.Request
 	}
 
 	err = ts.Execute(w, struct {
-		User *user
+		User *User
 	}{
 		User: u,
 	})
@@ -313,7 +313,7 @@ func (app *application) deleteUserGET(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ts.Execute(w, struct {
-		User *user
+		User *User
 	}{
 		User: u,
 	})
